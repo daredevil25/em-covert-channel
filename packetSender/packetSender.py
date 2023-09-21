@@ -1,13 +1,15 @@
+from scapy.arch.windows import get_windows_if_list
 from scapy.all import *
 from scapy.layers.inet import IP, TCP, UDP, fragment
 from typing import List
 import configparser
-import logging, time
+import logging
+import time
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
-from scapy.arch.windows import get_windows_if_list
 
 config = configparser.ConfigParser()
+
 
 class PacketSender():
     protocol: str
@@ -17,7 +19,10 @@ class PacketSender():
     packetCount: int
     packet: UDP
     frags: List[str]
-    patternData = {"protocol": ['UDP'], "payload": [b'U' * 1472, b'U' * 1472]}
+    patternData = {
+        "protocol": ['UDP', 'TCP'],
+        "payload": [b'\x00' * 1472, b'\xff' * 1472]
+    }
 
     def __init__(self) -> None:
         self.readConfig()
@@ -33,11 +38,12 @@ class PacketSender():
         # self.protocol = defaultConfig['protocol']
         # self.packetCount = int(defaultConfig['packetCount'])
 
-        print("Src: ",self.src,"\nDest: ",self.dest, "\nInterface:",self.iface)
+        print("Src: ", self.src, "\nDest: ",
+              self.dest, "\nInterface:", self.iface)
 
     # def definePacket(self, protocol, payload):
     #     self.packet = IP(dst = "192.168.8.1", proto=17)/UDP()/payload
-    #     # NDD : define packet based on passed parameters 
+    #     # NDD : define packet based on passed parameters
     #     # if protocol == 'UDP':
     #     #     ip_layer = IP(dst=self.dest, proto=17)
     #     #     udp_layer = UDP()
@@ -47,21 +53,19 @@ class PacketSender():
     #     # else:
     #     #     raise ValueError("Invalid protocol. Supported protocols are 'UDP' and 'TCP'.")
 
-
-
     def sendPackets(self):
-        # NDD : send packets for specific duration and log it properly as well 
+        # NDD : send packets for specific duration and log it properly as well
 
         # packet = self.definePacket()
         # send(self.packet, count = self.packetCount, verbose = False, iface = self.iface)
         self.payload = b'U' * 1472
-        self.packet = IP(dst = self.dest, proto=17)/UDP()/self.payload
+        self.packet = IP(dst=self.dest, proto=17)/UDP()/self.payload
         self.frags = fragment(self.packet)
 
         print("Packet", self.packet)
         print("Fragment", self.frags)
 
-        send(self.packet, count = 5, verbose = False, iface = self.iface)
+        send(self.packet, count=5, verbose=False, iface=self.iface)
 
     # def simulatePatterns(self):
     #     # for payload in self.patternData['payload']:
@@ -72,6 +76,7 @@ class PacketSender():
     #     payload = b'U' * 1472
     #     self.definePacket('UDP', payload)
     #     self.sendPackets()
+
 
 # print(packetCount)
 if __name__ == "__main__":
